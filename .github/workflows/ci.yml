@@ -1,0 +1,81 @@
+name: "CI"
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          yarn install
+          yarn build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            dist
+            action.yml
+          retention-days: 1
+
+    # outputs:
+    #   dist_ref: ${{ steps.commit.outputs.ref }}
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        version: [1.2.6]
+    steps:
+      - name: Download build
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+
+      - name: Setup Nomad
+        # uses: lukas-w/setup-nomad@${{ needs.build.outputs.dist_ref }}
+        uses: ./
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Try to run
+        run: |
+          nomad --version
+
+  push:
+    name: Push
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    steps:            
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Download build
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+
+      - name: Commit
+        id: commit
+        run: |
+          echo "BRANCH=$(git branch --show-current)" >> $GITHUB_ENV
+          git add -f dist
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git commit --message="dist $BRANCH ${{ github.sha }}"
+          echo "::set-output name=ref::$(git rev-parse HEAD)"
+      
+      - name: Push
+        run: |
+          git push origin "HEAD:dist/$BRANCH"

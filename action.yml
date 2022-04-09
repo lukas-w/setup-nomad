@@ -1,0 +1,8 @@
+name: "Setup Nomad"
+description: "Set up Nomad"
+inputs:
+  version:
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.mjs'
