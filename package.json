@@ -6,7 +6,7 @@
     "build": "ncc build index.mjs -o dist --source-map"
   },
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "@actions/tool-cache": "^1.7.2",
     "axios": "^0.26.1",
     "lodash.escaperegexp": "^4.1.2",
